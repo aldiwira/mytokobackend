@@ -90,7 +90,6 @@ router.post("/login", async (req, res, next) => {
     const exist = await existing({
       $or: [{ username: username }],
     });
-    console.log(exist);
     if (exist) {
       const checkpassword = await encrypt.auth(exist.password, password);
       const apitoken = await sign(exist._id);
