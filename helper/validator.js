@@ -3,7 +3,7 @@ const yup = require("yup");
 module.exports = {
   LoginValidator: () => {
     return yup.object().shape({
-      username: yup.string().trim().required(),
+      username: yup.string().trim().min(5).required(),
       password: yup
         .string()
         .trim()
@@ -17,7 +17,7 @@ module.exports = {
   },
   RegisterValidator: () => {
     return yup.object().shape({
-      username: yup.string().trim().required(),
+      username: yup.string().trim().min(5).required(),
       password: yup
         .string()
         .trim()

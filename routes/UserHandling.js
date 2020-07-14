@@ -1,5 +1,4 @@
 const express = require("express");
-const moment = require("moment");
 const validator = require("../helper/validator");
 const db = require("../helper/db");
 const response = require("../helper/response");
@@ -13,7 +12,7 @@ const existing = async (conditon) => {
   return await userM.findOne(conditon);
 };
 
-router.get("/user/", auth, async (req, res, next) => {
+router.get("/user", auth, async (req, res, next) => {
   let { _id } = req.payload;
   try {
     const userdata = await userM.findOne(_id);
@@ -22,14 +21,14 @@ router.get("/user/", auth, async (req, res, next) => {
         .status(200)
         .json(response.set(200, "Success fetch user data", userdata));
     } else {
-      throw new Error("user not found");
+      throw new Error("Your account not found");
     }
   } catch (error) {
     next(error);
   }
 });
 
-router.post("/user/changeinfo", auth, async (req, res, next) => {
+router.put("/user/changeinfo", auth, async (req, res, next) => {
   let { username, name } = req.body;
   let { _id } = req.payload;
   try {
@@ -38,7 +37,13 @@ router.post("/user/changeinfo", auth, async (req, res, next) => {
       await userM
         .findOneAndUpdate(
           { _id: _id },
-          { $set: { username: username, name: name } }
+          {
+            $set: {
+              username: username,
+              name: name,
+              updatedAt: response.dateNow(),
+            },
+          }
         )
         .then((value) => {
           res
@@ -46,14 +51,14 @@ router.post("/user/changeinfo", auth, async (req, res, next) => {
             .json(response.set(200, "Your account information changed", value));
         });
     } else {
-      throw new Error("Account not found");
+      throw new Error("Your account not found");
     }
   } catch (error) {
     next(error);
   }
 });
 
-router.post("/user/changepassword", auth, async (req, res, next) => {
+router.put("/user/changepassword", auth, async (req, res, next) => {
   let { oldpassword, newpassword } = req.body;
   let { _id } = req.payload;
   try {
@@ -66,7 +71,10 @@ router.post("/user/changepassword", auth, async (req, res, next) => {
       if (checkpassword) {
         const newpass = await encrypt.sign(newpassword);
         await userM
-          .findOneAndUpdate({ _id: _id }, { $set: { password: newpass } })
+          .findOneAndUpdate(
+            { _id: _id },
+            { $set: { password: newpass, updatedAt: response.dateNow() } }
+          )
           .then((value) => {
             res
               .status(200)
@@ -76,7 +84,7 @@ router.post("/user/changepassword", auth, async (req, res, next) => {
         throw new Error("Wrong password account");
       }
     } else {
-      throw new Error("User not found");
+      throw new Error("Your account not found");
     }
   } catch (error) {
     next(error);
@@ -87,15 +95,18 @@ router.post("/login", async (req, res, next) => {
   let { username, password } = req.body;
   try {
     await validator.LoginValidator().validate({ username, password });
-    const exist = await existing({
-      $or: [{ username: username }],
-    });
+    const exist = await userM.findOneAndUpdate(
+      {
+        $or: [{ username: username }],
+      },
+      { $set: { updatedAt: response.dateNow() } }
+    );
     if (exist) {
       const checkpassword = await encrypt.auth(exist.password, password);
       const apitoken = await sign(exist._id);
       if (checkpassword) {
         res.status(200).json(
-          response.set(200, "Success login", {
+          response.set(200, "Success login account", {
             user: exist,
             token: apitoken,
           })
@@ -113,7 +124,6 @@ router.post("/login", async (req, res, next) => {
 
 router.post("/register", async (req, res, next) => {
   let { username, password, name } = req.body;
-  const createdAt = moment().format();
   const cryptedPassword = await encrypt.sign(password);
   try {
     await validator.RegisterValidator().validate({ username, password, name });
@@ -125,11 +135,12 @@ router.post("/register", async (req, res, next) => {
         username,
         password: cryptedPassword,
         name,
-        createdAt,
+        createdAt: response.dateNow(),
+        updatedAt: response.dateNow(),
       });
       const apitoken = await sign(userD._id);
       res.status(200).json(
-        response.set(200, "Your account created", {
+        response.set(201, "Your account created", {
           user: userD,
           token: apitoken,
         })
