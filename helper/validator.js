@@ -52,4 +52,12 @@ module.exports = {
         .required(),
     });
   },
+  productBody: () => {
+    return yup.object().shape({
+      name: yup.string().trim().required(),
+      desc: yup.string().trim().required(),
+      price: yup.number().integer().min(0).positive().required(),
+      stock: yup.number().integer().min(0).positive().required(),
+    });
+  },
 };

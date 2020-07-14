@@ -1,3 +1,4 @@
+const moment = require("moment");
 module.exports = {
   set: (code, msg, data) => {
     data ? data : null;
@@ -6,5 +7,8 @@ module.exports = {
       message: msg,
       data: data,
     };
+  },
+  dateNow: () => {
+    return moment().format();
   },
 };

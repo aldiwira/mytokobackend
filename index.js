@@ -3,7 +3,7 @@ const morgan = require("morgan");
 const helmet = require("helmet");
 const cors = require("cors");
 const db = require("./helper/db");
-const { userRoute } = require("./routes");
+const { userRoute, productRoute } = require("./routes");
 require("dotenv").config();
 
 const app = express();
@@ -19,14 +19,14 @@ app.use(express.json());
 app.get("/", async (req, res) => {
   res.json({
     App: "My Toko",
-    Version: "0.0.0",
+    Version: "0.5.0",
     Massage: "Not Seriously project but worth it",
   });
 });
 
 //routes
 app.use("/", userRoute);
-
+app.use("/products", productRoute);
 //error handling
 app.use((error, req, res, next) => {
   if (error.status) {
