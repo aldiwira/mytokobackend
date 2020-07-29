@@ -100,23 +100,31 @@ router.put("/changeinfo", auth, async (req, res, next) => {
   let { _id } = req.payload;
   try {
     const exist = await existing(ownerM, { $or: [{ _id: _id }] });
+    const checkBody = await existing(ownerM, { username: username });
+    const checkU = username === exist.username;
     if (exist) {
-      await ownerM
-        .findOneAndUpdate(
-          { _id: _id },
-          {
-            $set: {
-              username: username,
-              name: name,
-              updatedAt: response.dateNow(),
-            },
-          }
-        )
-        .then((value) => {
-          res
-            .status(200)
-            .json(response.set(200, "Your account information changed", value));
-        });
+      if (!checkBody || checkU) {
+        await ownerM
+          .findOneAndUpdate(
+            { _id: _id },
+            {
+              $set: {
+                username: username,
+                name: name,
+                updatedAt: response.dateNow(),
+              },
+            }
+          )
+          .then((value) => {
+            res
+              .status(200)
+              .json(
+                response.set(200, "Your account information changed", value)
+              );
+          });
+      } else {
+        throw new Error("Your username is available");
+      }
     } else {
       throw new Error("Your account not found");
     }
