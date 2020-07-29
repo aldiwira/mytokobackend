@@ -3,7 +3,7 @@ const morgan = require("morgan");
 const helmet = require("helmet");
 const cors = require("cors");
 const db = require("./helper/db");
-const { userRoute, productRoute } = require("./routes");
+const { userRoute, productRoute, ownerRoute } = require("./routes");
 require("dotenv").config();
 
 const app = express();
@@ -25,7 +25,8 @@ app.get("/", async (req, res) => {
 });
 
 //routes
-app.use("/", userRoute);
+app.use("/users", userRoute);
+app.use("/owners", ownerRoute);
 app.use("/products", productRoute);
 //error handling
 app.use((error, req, res, next) => {

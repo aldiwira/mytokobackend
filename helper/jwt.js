@@ -3,12 +3,16 @@ const moment = require("moment");
 const datenow = moment().format();
 const key = process.env.apikey;
 module.exports = {
-  sign: (id) => {
+  sign: (id, rule) => {
     return new Promise((resolve, reject) => {
-      jwt.sign({ _id: id, createdAt: datenow }, key, (err, token) => {
-        resolve(token);
-        reject(err);
-      });
+      jwt.sign(
+        { _id: id, rule: rule, createdAt: datenow },
+        key,
+        (err, token) => {
+          resolve(token);
+          reject(err);
+        }
+      );
     });
   },
   auth: (req, res, next) => {
