@@ -8,4 +8,10 @@ module.exports = {
   auth: async (passwordDB, passwordBody) => {
     return await bcrypt.compareSync(passwordBody, passwordDB);
   },
+  isOwner: (rules) => {
+    return rules === "owner" ? true : false;
+  },
+  isUser: (rules) => {
+    return rules === "user" ? true : false;
+  },
 };

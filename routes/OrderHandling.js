@@ -8,6 +8,8 @@ const { auth } = require("../helper/jwt");
 4. Edit Order
 */
 
-router.get("/", auth, async (req, res, next) => {});
+router.get("/", auth, async (req, res, next) => {
+  const { _id, rule } = req.payload;
+});
 
 module.exports = router;

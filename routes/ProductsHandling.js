@@ -4,6 +4,7 @@ const db = require("../helper/db");
 const validator = require("../helper/validator");
 const response = require("../helper/response");
 const { auth } = require("../helper/jwt");
+const { isOwner } = require("../helper/encrypt");
 
 const router = express.Router();
 const productM = db.get("products");
@@ -23,7 +24,7 @@ const productCheck = async (condition) => {
 // TODO
 // 1. Fetch all user products
 router.get("/", auth, async (req, res, next) => {
-  const { _id } = req.payload;
+  const { _id, rule } = req.payload;
   try {
     await productM.find({ owner: _id }).then((datas) => {
       res
@@ -36,7 +37,7 @@ router.get("/", auth, async (req, res, next) => {
 });
 // 2. Fetch product by id product
 router.get("/:id", auth, async (req, res, next) => {
-  const { _id } = req.payload;
+  const { _id, rule } = req.payload;
   const { id } = req.params;
   try {
     const product = await productCheck({ _id: id, owner: _id });
@@ -50,33 +51,37 @@ router.get("/:id", auth, async (req, res, next) => {
   }
 });
 // 3. Create product
-router.post("/", auth, async (req, res, next) => {
+router.post("/create", auth, async (req, res, next) => {
   const { name, price, stock, desc } = req.body;
-  const { _id } = req.payload;
+  const { _id, rule } = req.payload;
   try {
-    await validator.productBody().validate({ name, price, stock, desc });
-    const exist = await productCheck({ name: name, owner: _id });
-    if (!exist) {
-      await productM
-        .insert({
-          name,
-          price,
-          stock,
-          desc,
-          owner: _id,
-          createdAt: dateNow,
-          updatedAt: dateNow,
-        })
-        .then((value) => {
-          res
-            .status(200)
-            .json(response.set(201, "Success created product", value));
-        })
-        .catch((err) => {
-          throw new Error(err);
-        });
+    if (isOwner(rule)) {
+      await validator.productBody().validate({ name, price, stock, desc });
+      const exist = await productCheck({ name: name, owner: _id });
+      if (!exist) {
+        await productM
+          .insert({
+            name,
+            price,
+            stock,
+            desc,
+            owner: _id,
+            createdAt: dateNow,
+            updatedAt: dateNow,
+          })
+          .then((value) => {
+            res
+              .status(200)
+              .json(response.set(201, "Success created product", value));
+          })
+          .catch((err) => {
+            throw new Error(err);
+          });
+      } else {
+        throw new Error("Product was available");
+      }
     } else {
-      throw new Error("Product was available");
+      throw new Error("Permission Denied");
     }
   } catch (error) {
     next(error);
@@ -85,24 +90,28 @@ router.post("/", auth, async (req, res, next) => {
 // 4. Edit product
 router.put("/:id/edit", auth, async (req, res, next) => {
   const { name, price, stock, desc } = req.body;
-  const { _id } = req.payload;
+  const { _id, rule } = req.payload;
   const { id } = req.params;
   try {
-    await validator.productBody().validate({ name, price, stock, desc });
-    const exist = await productCheck({ _id: id, owner: _id });
-    if (exist) {
-      await productM
-        .findOneAndUpdate(
-          { _id: id },
-          { $set: { name, price, stock, desc, updatedAt: dateNow } }
-        )
-        .then((datas) => {
-          res
-            .status(200)
-            .json(response.set(200, "Success change products data", datas));
-        });
+    if (isOwner(rule)) {
+      await validator.productBody().validate({ name, price, stock, desc });
+      const exist = await productCheck({ _id: id, owner: _id });
+      if (exist) {
+        await productM
+          .findOneAndUpdate(
+            { _id: id },
+            { $set: { name, price, stock, desc, updatedAt: dateNow } }
+          )
+          .then((datas) => {
+            res
+              .status(200)
+              .json(response.set(200, "Success change products data", datas));
+          });
+      } else {
+        throw new Error("Product ID not found");
+      }
     } else {
-      throw new Error("Product ID not found");
+      throw new Error("Permission Denied");
     }
   } catch (error) {
     next(error);
@@ -111,17 +120,23 @@ router.put("/:id/edit", auth, async (req, res, next) => {
 // 5. Delete product
 router.delete("/:id/delete", auth, async (req, res, next) => {
   const { id } = req.params;
-  const { _id } = req.payload;
+  const { _id, rule } = req.payload;
   try {
-    const exist = await productCheck({ _id: id, owner: _id });
-    if (exist) {
-      await productM.findOneAndDelete({ _id: id, owner: _id }).then((datas) => {
-        res
-          .status(200)
-          .json(response.set(200, `Success delete ${exist.name}`, true));
-      });
+    if (isOwner(rule)) {
+      const exist = await productCheck({ _id: id, owner: _id });
+      if (exist) {
+        await productM
+          .findOneAndDelete({ _id: id, owner: _id })
+          .then((datas) => {
+            res
+              .status(200)
+              .json(response.set(200, `Success delete ${exist.name}`, true));
+          });
+      } else {
+        throw new Error("Product ID not found");
+      }
     } else {
-      throw new Error("Product ID not found");
+      throw new Error("Permission Denied");
     }
   } catch (error) {
     next(error);
