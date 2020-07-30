@@ -1,12 +1,12 @@
 const express = require("express");
 const validator = require("../helper/validator");
-const db = require("../helper/db");
+const { db, getCollection } = require("../helper/db");
 const response = require("../helper/response");
 const encrypt = require("../helper/encrypt");
 const { auth, sign } = require("../helper/jwt");
 
 const router = express.Router();
-const ownerM = db.get("owner");
+const ownerM = getCollection("owner");
 
 const existing = async (model, conditon) => {
   return await model.findOne(conditon);
@@ -15,7 +15,6 @@ const existing = async (model, conditon) => {
 //owner login and register
 router.post("/login", async (req, res, next) => {
   let { username, password } = req.body;
-  console.log(req.body);
   try {
     await validator.LoginValidator().validate({ username, password });
     const exist = await ownerM.findOneAndUpdate(
@@ -52,10 +51,8 @@ router.post("/register", async (req, res, next) => {
     const exist = await existing(ownerM, {
       $or: [{ username: username }, { name: name }],
     });
-    console.log();
     if (!exist) {
       const cryptedPassword = await encrypt.sign(password);
-      console.log(encrypt);
       const ownerD = await ownerM.insert({
         username,
         password: cryptedPassword,

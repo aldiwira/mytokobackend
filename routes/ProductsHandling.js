@@ -1,13 +1,13 @@
 const express = require("express");
 const moment = require("moment");
-const db = require("../helper/db");
+const { db, getCollection } = require("../helper/db");
 const validator = require("../helper/validator");
 const response = require("../helper/response");
 const { auth } = require("../helper/jwt");
 const { isOwner } = require("../helper/encrypt");
 
 const router = express.Router();
-const productM = db.get("products");
+const productM = getCollection("products");
 const dateNow = moment().format();
 
 const productCheck = async (condition) => {

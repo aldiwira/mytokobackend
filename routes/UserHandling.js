@@ -1,12 +1,12 @@
 const express = require("express");
 const validator = require("../helper/validator");
-const db = require("../helper/db");
+const { db, getCollection } = require("../helper/db");
 const response = require("../helper/response");
 const encrypt = require("../helper/encrypt");
 const { auth, sign } = require("../helper/jwt");
 
 const router = express.Router();
-const userM = db.get("users");
+const userM = getCollection("users");
 
 const existing = async (model, conditon) => {
   return await model.findOne(conditon);
